@@ -882,7 +882,7 @@ body::before {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
             Open X Tracker
           </button>
-          <div class="launcher-hint">Opens as a popup window — position it anywhere on your screen.</div>
+          <div class="launcher-hint">Opens as a new tab — switch back here anytime.</div>
           <div class="launcher-req">Requires: GMGN account logged in</div>
         </div>
       </div>
@@ -908,7 +908,7 @@ body::before {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
             Open TG Tracker
           </button>
-          <div class="launcher-hint">Opens as a popup window — position it anywhere on your screen.</div>
+          <div class="launcher-hint">Opens as a new tab — switch back here anytime.</div>
           <div class="launcher-req">Requires: GMGN account logged in</div>
         </div>
       </div>
@@ -1388,16 +1388,7 @@ function openTracker(key) {
     return;
   }
 
-  // Calculate popup position: place it to the right of the current window
-  const w = 480, h = window.screen.availHeight;
-  const left = Math.min(window.screenX + window.outerWidth + 10, window.screen.availWidth - w);
-  const top  = window.screenY;
-
-  t.win = window.open(
-    t.url,
-    `gmgn_${key}`,
-    `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=yes`
-  );
+  t.win = window.open(t.url, `gmgn_${key}`);
 
   if (!t.win) {
     // Popup blocked
@@ -1437,13 +1428,13 @@ function setTrackerOpen(key, isOpen) {
       <div class="launcher-open-state">
         <div class="open-indicator">
           <span class="open-dot ${t.color}"></span>
-          Running in separate window
+          Open in a separate tab
         </div>
         <button class="btn-refocus" onclick="openTracker('${key}')">
-          ↗ Focus Window
+          ↗ Switch to Tab
         </button>
         <div class="launcher-hint" style="margin-top:4px">
-          Close the popup window to stop tracking,<br>or click below to relaunch.
+          Close that tab to reset,<br>or click below to relaunch.
         </div>
         <button class="launcher-btn ${t.color}" onclick="relauncher('${key}')" style="margin-top:2px;font-size:9px;padding:8px 16px;">
           ↺ Relaunch
@@ -1480,7 +1471,7 @@ function restoreLauncherUI(key) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
         Open X Tracker
       </button>
-      <div class="launcher-hint">Opens as a popup window — position it anywhere on your screen.</div>
+      <div class="launcher-hint">Opens as a new tab — switch back here anytime.</div>
       <div class="launcher-req">Requires: GMGN account logged in</div>`;
   } else {
     inner.innerHTML = `
@@ -1493,7 +1484,7 @@ function restoreLauncherUI(key) {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
         Open TG Tracker
       </button>
-      <div class="launcher-hint">Opens as a popup window — position it anywhere on your screen.</div>
+      <div class="launcher-hint">Opens as a new tab — switch back here anytime.</div>
       <div class="launcher-req">Requires: GMGN account logged in</div>`;
   }
 }
