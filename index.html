@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpha Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:           #03030a;
+  --panel:        #06060f;
+  --panel2:       #09091a;
+  --border:       #12122a;
+  --border-hi:    #1e1e40;
+  --accent:       #00e676;
+  --accent-dim:   rgba(0,230,118,0.08);
+  --accent-glow:  rgba(0,230,118,0.25);
+  --red:          #ff3060;
+  --amber:        #ffab00;
+  --amber-dim:    rgba(255,171,0,0.08);
+  --blue:         #2979ff;
+  --blue-dim:     rgba(41,121,255,0.08);
+  --purple:       #d500f9;
+  --cyan:         #00e5ff;
+  --text:         #b0b0cc;
+  --text-dim:     #484870;
+  --text-bright:  #e8e8f8;
+  --font:         'JetBrains Mono', monospace;
+  --topbar-h:     46px;
+  --panel-hdr:    34px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+/* ═══ NOISE OVERLAY ═══════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.018;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ═══ LAYOUT ══════════════════════════════════════════ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ═══ TOP BAR ═════════════════════════════════════════ */
+#topbar {
+  height: var(--topbar-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border-hi);
+  position: relative;
+  z-index: 100;
+}
+
+#topbar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--amber) 50%, var(--blue) 80%, transparent 100%);
+  opacity: 0.35;
+}
+
+#logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  border-right: 1px solid var(--border-hi);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.logo-hex {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  flex-shrink: 0;
+}
+.logo-hex svg { width: 22px; height: 22px; }
+
+#logo-text {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+}
+
+#logo-text span {
+  color: var(--accent);
+}
+
+/* ticker */
+#ticker-wrap {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  mask-image: linear-gradient(90deg, transparent, black 3%, black 97%, transparent);
+}
+
+#ticker {
+  display: flex;
+  align-items: center;
+  animation: tick 50s linear infinite;
+  will-change: transform;
+}
+
+#ticker:hover { animation-play-state: paused; }
+
+@keyframes tick {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.tick-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 20px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  height: var(--topbar-h);
+}
+
+.tick-sym  { font-size: 10px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.12em; }
+.tick-px   { font-size: 11px; font-weight: 600; color: var(--text-bright); }
+.tick-chg  { font-size: 10px; font-weight: 500; }
+.tick-chg.up   { color: var(--accent); }
+.tick-chg.down { color: var(--red); }
+
+/* topbar right */
+#topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-left: 1px solid var(--border-hi);
+  flex-shrink: 0;
+}
+
+.hdr-btn {
+  background: none;
+  border: 1px solid var(--border-hi);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hdr-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+#clock {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  border-right: 1px solid var(--border-hi);
+  padding: 0 14px 0 0;
+  margin-right: 2px;
+}
+
+/* ═══ MAIN GRID ══════════════════════════════════════ */
+#main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ═══ PANEL ══════════════════════════════════════════ */
+.panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-hi);
+  overflow: hidden;
+  min-height: 0;
+  background: var(--panel);
+}
+.panel:last-child { border-right: none; }
+
+.panel-hdr {
+  height: var(--panel-hdr);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 13px;
+  border-bottom: 1px solid var(--border-hi);
+  background: var(--panel2);
+  position: relative;
+}
+
+.panel-hdr::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+}
+
+.panel-hdr.green::before { background: linear-gradient(90deg, transparent, var(--accent-glow), transparent); }
+.panel-hdr.amber::before { background: linear-gradient(90deg, transparent, rgba(255,171,0,0.3), transparent); }
+.panel-hdr.blue::before  { background: linear-gradient(90deg, transparent, rgba(41,121,255,0.3), transparent); }
+
+.ptitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.ptitle .pip {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  animation: blink 2.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.pip.green  { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.pip.amber  { background: var(--amber);  box-shadow: 0 0 6px var(--amber);  }
+.pip.blue   { background: var(--blue);   box-shadow: 0 0 6px var(--blue);   }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 2px 7px;
+  border-radius: 1px;
+  text-transform: uppercase;
+}
+
+.badge-live  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,230,118,0.2); }
+.badge-idle  { background: rgba(255,255,255,0.03); color: var(--text-dim); border: 1px solid var(--border); }
+.badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,171,0,0.2); }
+
+.panel-body {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel-body iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--panel);
+  color-scheme: dark;
+}
+
+/* ═══ WALLET FEED ════════════════════════════════════ */
+#wallet-feed {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hi) transparent;
+}
+#wallet-feed::-webkit-scrollbar { width: 3px; }
+#wallet-feed::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 0; }
+
+.tx {
+  padding: 9px 13px;
+  border-bottom: 1px solid rgba(18,18,42,0.8);
+  cursor: pointer;
+  transition: background 0.2s;
+  animation: txIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.tx:hover { background: rgba(0,230,118,0.025); }
+
+.tx.flash {
+  animation: txIn 0.35s cubic-bezier(0.16, 1, 0.3, 1), flashAnim 1.8s ease forwards;
+}
+
+@keyframes txIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes flashAnim {
+  0%   { background: rgba(0,230,118,0.12); }
+  100% { background: transparent; }
+}
+
+.tx::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.tx:hover::before { opacity: 0.6; }
+
+.tx-r1 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.chain-tag {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 5px;
+  border-radius: 1px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.ct-eth       { background: rgba(98,126,234,0.18); color: #7a9ff5; border: 1px solid rgba(98,126,234,0.25); }
+.ct-bsc       { background: rgba(240,185,11,0.15);  color: #f0c030; border: 1px solid rgba(240,185,11,0.25); }
+.ct-polygon   { background: rgba(130,71,229,0.18); color: #a56cf0; border: 1px solid rgba(130,71,229,0.25); }
+.ct-arbitrum  { background: rgba(40,160,240,0.15); color: #50b8f8; border: 1px solid rgba(40,160,240,0.25); }
+.ct-base      { background: rgba(0,82,255,0.15);   color: #4488ff; border: 1px solid rgba(0,82,255,0.25); }
+.ct-optimism  { background: rgba(255,4,32,0.15);   color: #ff5566; border: 1px solid rgba(255,4,32,0.25); }
+.ct-avalanche { background: rgba(232,65,66,0.15);  color: #f07070; border: 1px solid rgba(232,65,66,0.25); }
+.ct-fantom    { background: rgba(19,181,236,0.15); color: #40d0f0; border: 1px solid rgba(19,181,236,0.25); }
+.ct-linea     { background: rgba(97,209,255,0.12); color: #80d8ff; border: 1px solid rgba(97,209,255,0.2); }
+.ct-zksync    { background: rgba(54,103,246,0.15); color: #7090ff; border: 1px solid rgba(54,103,246,0.25); }
+.ct-sol       { background: rgba(153,69,255,0.18); color: #c080ff; border: 1px solid rgba(153,69,255,0.25); }
+
+.tx-wallet {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--amber);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.tx-time {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.tx-r2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.t-out { color: var(--red); }
+.t-arr { color: var(--text-dim); font-size: 9px; }
+.t-in  { color: var(--accent); }
+.t-usd { margin-left: auto; font-size: 9px; color: var(--text-dim); font-weight: 400; }
+
+/* feed empty state */
+.feed-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-dim);
+  padding: 30px;
+  text-align: center;
+}
+
+.feed-empty .icon-empty {
+  font-size: 30px;
+  opacity: 0.2;
+  animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+.feed-empty p { font-size: 10px; line-height: 1.7; opacity: 0.5; }
+.feed-empty p strong { color: var(--accent); opacity: 1; }
+
+/* feed sub header */
+.feed-subhdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ═══ MODAL ══════════════════════════════════════════ */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,5,0.88);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+#overlay.hidden { display: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+#modal {
+  width: 540px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #080812;
+  border: 1px solid var(--border-hi);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,230,118,0.06);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hi) transparent;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.m-top {
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border-hi);
+  padding: 18px 22px 16px;
+  position: relative;
+}
+
+.m-top::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+
+.m-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.m-title-icon { color: var(--accent); font-size: 13px; }
+
+.m-sub {
+  font-size: 9px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+}
+
+.m-body { padding: 20px 22px; }
+
+.m-section { margin-bottom: 18px; }
+.m-section:last-child { margin-bottom: 0; }
+
+.m-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 7px;
+}
+
+.m-label em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--accent);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.m-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 10px;
+  padding: 9px 11px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.m-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,230,118,0.08);
+}
+
+.m-input::placeholder { color: var(--text-dim); opacity: 0.4; }
+
+.m-hint {
+  font-size: 8.5px;
+  color: var(--text-dim);
+  margin-top: 5px;
+  line-height: 1.6;
+  opacity: 0.65;
+}
+
+.m-hint a { color: var(--accent); text-decoration: none; }
+.m-hint a:hover { text-decoration: underline; }
+
+.m-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+.wallet-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 7px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hi) transparent;
+}
+
+.w-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.w-row .m-input {
+  padding: 7px 9px;
+  font-size: 10px;
+}
+
+.w-label-in { width: 105px; flex-shrink: 0; }
+.w-addr-in  { flex: 1; min-width: 0; }
+
+.w-chain-sel {
+  width: 72px;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 9px;
+  padding: 7px 5px;
+  outline: none;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: border-color 0.15s;
+}
+
+.w-chain-sel:focus { border-color: var(--accent); }
+
+.btn-rm {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: 1px solid rgba(255,48,96,0.25);
+  color: var(--red);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+.btn-rm:hover { background: rgba(255,48,96,0.1); border-color: var(--red); }
+
+.btn-add-row {
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border-hi);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-add-row:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+.m-footer {
+  display: flex;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--panel2);
+}
+
+.btn-save {
+  flex: 1;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 11px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-save:hover { opacity: 0.88; }
+.btn-save:active { transform: scale(0.98); }
+
+.btn-cancel {
+  background: none;
+  border: 1px solid var(--border-hi);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 11px 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+
+/* ═══ SCROLLBAR GLOBAL ═══════════════════════════════ */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ TOP BAR ══════════════════════════════════════ -->
+  <div id="topbar">
+    <div id="logo">
+      <div class="logo-hex">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" stroke="#00e676" stroke-width="1.2" fill="rgba(0,230,118,0.06)"/>
+          <polygon points="12,6 17.5,9.5 17.5,15.5 12,18 6.5,15.5 6.5,9.5" stroke="#00e676" stroke-width="0.6" fill="none" opacity="0.4"/>
+        </svg>
+      </div>
+      <div id="logo-text"><span>Alpha</span>Terminal</div>
+    </div>
+
+    <div id="ticker-wrap">
+      <div id="ticker"></div>
+    </div>
+
+    <div id="topbar-right">
+      <div id="clock">--:--:--</div>
+      <button class="hdr-btn" onclick="openModal()">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Config
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ═════════════════════════════════════════ -->
+  <div id="main">
+
+    <!-- LEFT: X TRACKER -->
+    <div class="panel">
+      <div class="panel-hdr green">
+        <div class="ptitle">
+          <span class="pip green"></span>
+          X Tracker
+        </div>
+        <span class="badge badge-live">LIVE</span>
+      </div>
+      <div class="panel-body">
+        <iframe
+          id="xframe"
+          src="https://gmgn.ai/follow?popout=true&target=xTracker"
+          allow="clipboard-write; clipboard-read; storage-access"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation"
+          title="GMGN X Tracker"
+        ></iframe>
+      </div>
+    </div>
+
+    <!-- MIDDLE: TG TRACKER -->
+    <div class="panel">
+      <div class="panel-hdr amber">
+        <div class="ptitle">
+          <span class="pip amber"></span>
+          TG Tracker
+        </div>
+        <span class="badge badge-amber">LIVE</span>
+      </div>
+      <div class="panel-body">
+        <iframe
+          id="tgframe"
+          src="https://gmgn.ai/follow?popout=true&target=tgTrackers"
+          allow="clipboard-write; clipboard-read; storage-access"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation"
+          title="GMGN TG Tracker"
+        ></iframe>
+      </div>
+    </div>
+
+    <!-- RIGHT: WALLET FEED -->
+    <div class="panel" style="background:var(--bg);">
+      <div class="panel-hdr blue">
+        <div class="ptitle">
+          <span class="pip blue"></span>
+          Wallet Feed
+          <span id="wallet-count" style="font-weight:400;color:var(--text-dim);letter-spacing:0.05em;font-size:9px;">— 0 wallets</span>
+        </div>
+        <span class="badge badge-idle" id="feed-status">IDLE</span>
+      </div>
+      <div class="feed-subhdr">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        SWAPS &amp; TRADES ONLY &nbsp;·&nbsp; EVM + SOL &nbsp;·&nbsp; LIVE POLLING
+      </div>
+      <div id="wallet-feed">
+        <div class="feed-empty" id="feed-empty">
+          <div class="icon-empty">◈</div>
+          <p>No wallets configured yet.<br><strong>Click Config</strong> to add your wallets,<br>Moralis &amp; Helius API keys.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#main -->
+</div><!-- /#app -->
+
+<!-- ══ CONFIG MODAL ══════════════════════════════════ -->
+<div id="overlay">
+  <div id="modal">
+    <div class="m-top">
+      <div class="m-title">
+        <span class="m-title-icon">◈</span>
+        Configuration
+      </div>
+      <div class="m-sub">API keys are stored locally in your browser. Nothing is sent to any third-party server.</div>
+    </div>
+    <div class="m-body">
+
+      <div class="m-section">
+        <div class="m-label">Moralis API Key <em>· EVM (all chains)</em></div>
+        <input type="password" class="m-input" id="inp-moralis"
+          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        <div class="m-hint">
+          Free at <a href="https://moralis.io" target="_blank">moralis.io</a> — one key covers ETH, BSC, Polygon, Arbitrum, Base, Optimism, Avalanche, Fantom, Linea, zkSync &amp; more.
+        </div>
+      </div>
+
+      <div class="m-section">
+        <div class="m-label">Helius API Key <em>· Solana</em></div>
+        <input type="password" class="m-input" id="inp-helius"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        <div class="m-hint">Free at <a href="https://helius.dev" target="_blank">helius.dev</a> — 1 million credits / month on the free tier. Direct SWAP transaction type endpoint.</div>
+      </div>
+
+      <hr class="m-divider">
+
+      <div class="m-section">
+        <div class="m-label">Wallets to Track</div>
+        <div class="wallet-rows" id="wallet-rows"></div>
+        <button class="btn-add-row" onclick="addRow()">+ Add Wallet</button>
+        <div class="m-hint" style="margin-top:8px;">
+          Add EVM (0x…) or Solana addresses. Label is just a display name for the feed.
+          Select the correct chain for EVM addresses.
+        </div>
+      </div>
+
+    </div>
+    <div class="m-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveConfig()">Save &amp; Start Tracking</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────
+const CHAINS = {
+  eth:       { label:'ETH',    moralisId:'0x1',    cls:'ct-eth',       explorer:'https://etherscan.io/tx/' },
+  bsc:       { label:'BSC',    moralisId:'0x38',   cls:'ct-bsc',       explorer:'https://bscscan.com/tx/' },
+  polygon:   { label:'MATIC',  moralisId:'0x89',   cls:'ct-polygon',   explorer:'https://polygonscan.com/tx/' },
+  arbitrum:  { label:'ARB',    moralisId:'0xa4b1', cls:'ct-arbitrum',  explorer:'https://arbiscan.io/tx/' },
+  base:      { label:'BASE',   moralisId:'0x2105', cls:'ct-base',      explorer:'https://basescan.org/tx/' },
+  optimism:  { label:'OP',     moralisId:'0xa',    cls:'ct-optimism',  explorer:'https://optimistic.etherscan.io/tx/' },
+  avalanche: { label:'AVAX',   moralisId:'0xa86a', cls:'ct-avalanche', explorer:'https://snowtrace.io/tx/' },
+  fantom:    { label:'FTM',    moralisId:'0xfa',   cls:'ct-fantom',    explorer:'https://ftmscan.com/tx/' },
+  linea:     { label:'LINEA',  moralisId:'0xe708', cls:'ct-linea',     explorer:'https://lineascan.build/tx/' },
+  zksync:    { label:'ZK',     moralisId:'0x144',  cls:'ct-zksync',    explorer:'https://explorer.zksync.io/tx/' },
+};
+
+const CG_IDS = {
+  bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL',
+  binancecoin: 'BNB', 'matic-network': 'MATIC',
+  arbitrum: 'ARB', 'avalanche-2': 'AVAX', 'optimism': 'OP'
+};
+
+// ─────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────
+let cfg = { moralisKey:'', heliusKey:'', wallets:[] };
+let seenHashes = new Set();
+let feedItems  = [];
+let pollTimer  = null;
+let isFirstPoll = true;
+
+// ─────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────
+(function init() {
+  try {
+    const saved = localStorage.getItem('alphaterm_cfg');
+    if (saved) {
+      cfg = JSON.parse(saved);
+      closeModal();
+      boot();
+    }
+  } catch(e) {}
+  startClock();
+  fetchTicker();
+  setInterval(fetchTicker, 45_000);
+})();
+
+function boot() {
+  updateWalletCount();
+  if (cfg.wallets.length > 0 && (cfg.moralisKey || cfg.heliusKey)) {
+    setStatus('LIVE');
+    pollAll();
+    pollTimer = setInterval(pollAll, 30_000);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────────────
+function startClock() {
+  function tick() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toUTCString().slice(17, 25) + ' UTC';
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+// ─────────────────────────────────────────────────────
+// TICKER
+// ─────────────────────────────────────────────────────
+async function fetchTicker() {
+  try {
+    const ids = Object.keys(CG_IDS).join(',');
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if (!r.ok) return;
+    const data = await r.json();
+    let html = '';
+    for (const [id, sym] of Object.entries(CG_IDS)) {
+      if (!data[id]) continue;
+      const p = data[id].usd;
+      const c = data[id].usd_24h_change ?? 0;
+      html += `<div class="tick-item">
+        <span class="tick-sym">${sym}</span>
+        <span class="tick-px">${fmtPrice(p)}</span>
+        <span class="tick-chg ${c>=0?'up':'down'}">${c>=0?'+':''}${c.toFixed(2)}%</span>
+      </div>`;
+    }
+    const el = document.getElementById('ticker');
+    el.innerHTML = html + html; // duplicate for seamless loop
+  } catch(e) { /* silently skip */ }
+}
+
+function fmtPrice(p) {
+  if (p >= 10000) return '$' + Math.round(p).toLocaleString('en-US');
+  if (p >= 1)     return '$' + p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return '$' + p.toFixed(5);
+}
+
+// ─────────────────────────────────────────────────────
+// POLLING
+// ─────────────────────────────────────────────────────
+async function pollAll() {
+  if (!cfg.wallets.length) return;
+  const tasks = cfg.wallets.map(w =>
+    w.chain === 'sol' ? fetchSol(w) : fetchEvm(w)
+  );
+  await Promise.allSettled(tasks);
+  isFirstPoll = false;
+}
+
+// ─── EVM via Moralis ──────────────────────────────
+async function fetchEvm(wallet) {
+  if (!cfg.moralisKey) return;
+  const chain = CHAINS[wallet.chain];
+  if (!chain) return;
+
+  try {
+    const url = `https://deep-index.moralis.io/api/v2.2/${wallet.address}/erc20/transfers` +
+                `?chain=${chain.moralisId}&limit=25&order=DESC`;
+    const r = await fetch(url, {
+      headers: { 'X-API-Key': cfg.moralisKey },
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!r.ok) return;
+    const json = await r.json();
+    const transfers = json.result || [];
+
+    // Group by tx hash
+    const groups = {};
+    for (const t of transfers) {
+      (groups[t.transaction_hash] = groups[t.transaction_hash] || []).push(t);
+    }
+
+    for (const [hash, txList] of Object.entries(groups)) {
+      if (seenHashes.has(hash)) continue;
+
+      const addr = wallet.address.toLowerCase();
+      const inflow  = txList.filter(t => t.to_address?.toLowerCase()   === addr);
+      const outflow = txList.filter(t => t.from_address?.toLowerCase() === addr);
+
+      // Swap = same tx has both inflow and outflow
+      if (inflow.length && outflow.length) {
+        seenHashes.add(hash);
+        if (isFirstPoll) continue; // pre-seed hashes without displaying
+
+        const tin  = inflow[0];
+        const tout = outflow[0];
+
+        const amtOut = fmtAmt(tout.value, tout.decimals);
+        const amtIn  = fmtAmt(tin.value,  tin.decimals);
+
+        let usd = '';
+        if (tin.usd_price) {
+          const v = (parseFloat(tin.value) / 10 ** parseInt(tin.decimals)) * tin.usd_price;
+          usd = '$' + v.toLocaleString('en-US', {maximumFractionDigits:0});
+        }
+
+        pushItem({
+          hash,
+          chain: wallet.chain,
+          label: wallet.label,
+          out:   `${amtOut} ${tout.token_symbol || '???'}`,
+          in:    `${amtIn}  ${tin.token_symbol  || '???'}`,
+          usd,
+          ts: new Date(tout.block_timestamp || Date.now()),
+          url: chain.explorer + hash,
+        });
+      } else {
+        // Unseen tx but not a swap — still mark seen to avoid re-checking
+        seenHashes.add(hash);
+      }
+    }
+  } catch(e) { console.debug('[EVM]', wallet.label, e.message); }
+}
+
+// ─── SOL via Helius ───────────────────────────────
+async function fetchSol(wallet) {
+  if (!cfg.heliusKey) return;
+  try {
+    const url = `https://api.helius.xyz/v0/addresses/${wallet.address}/transactions` +
+                `?type=SWAP&api-key=${cfg.heliusKey}&limit=20`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+    if (!r.ok) return;
+    const txs = await r.json();
+    if (!Array.isArray(txs)) return;
+
+    for (const tx of txs) {
+      if (seenHashes.has(tx.signature)) continue;
+      seenHashes.add(tx.signature);
+      if (isFirstPoll) continue;
+
+      const swap = tx.events?.swap;
+      if (!swap) continue;
+
+      const inp = swap.tokenInputs?.[0]  ?? swap.nativeInput;
+      const out = swap.tokenOutputs?.[0] ?? swap.nativeOutput;
+
+      const inSym  = inp?.mint  ? inp.mint.slice(0,4)+'…'  : 'SOL';
+      const outSym = out?.mint  ? out.mint.slice(0,4)+'…'  : 'SOL';
+      const inAmt  = inp  ? fmtAmt(inp.rawTokenAmount?.tokenAmount  ?? inp.amount,  inp.rawTokenAmount?.decimals  ?? 9) : '?';
+      const outAmt = out  ? fmtAmt(out.rawTokenAmount?.tokenAmount  ?? out.amount,  out.rawTokenAmount?.decimals ?? 9) : '?';
+
+      pushItem({
+        hash: tx.signature,
+        chain: 'sol',
+        label: wallet.label,
+        out:   `${inAmt} ${inSym}`,
+        in:    `${outAmt} ${outSym}`,
+        usd:   '',
+        ts:    new Date((tx.timestamp ?? Date.now()/1000) * 1000),
+        url:   `https://solscan.io/tx/${tx.signature}`,
+      });
+    }
+  } catch(e) { console.debug('[SOL]', wallet.label, e.message); }
+}
+
+function fmtAmt(raw, dec = 18) {
+  const v = parseFloat(raw) / Math.pow(10, parseInt(dec) || 18);
+  if (!isFinite(v)) return '?';
+  if (v >= 1e6)  return (v/1e6).toFixed(2)  + 'M';
+  if (v >= 1e3)  return (v/1e3).toFixed(2)  + 'K';
+  if (v >= 1)    return v.toFixed(3);
+  return v.toFixed(5);
+}
+
+// ─────────────────────────────────────────────────────
+// FEED
+// ─────────────────────────────────────────────────────
+function pushItem(item) {
+  feedItems.unshift(item);
+  if (feedItems.length > 300) feedItems.pop();
+  renderItem(item, true);
+}
+
+function renderItem(item, isNew) {
+  document.getElementById('feed-empty')?.remove();
+
+  const feed = document.getElementById('wallet-feed');
+  const chain = item.chain === 'sol'
+    ? { label:'SOL', cls:'ct-sol' }
+    : { label: CHAINS[item.chain]?.label || item.chain.toUpperCase(), cls: CHAINS[item.chain]?.cls || 'ct-eth' };
+
+  const el = document.createElement('div');
+  el.className = 'tx' + (isNew ? ' flash' : '');
+  el.title = 'Open in explorer';
+  el.onclick = () => window.open(item.url, '_blank');
+
+  el.innerHTML = `
+    <div class="tx-r1">
+      <span class="chain-tag ${chain.cls}">${chain.label}</span>
+      <span class="tx-wallet" title="${esc(item.label)}">${esc(item.label)}</span>
+      <span class="tx-time">${timeAgo(item.ts)}</span>
+    </div>
+    <div class="tx-r2">
+      <span class="t-out">▼ ${esc(item.out)}</span>
+      <span class="t-arr">→</span>
+      <span class="t-in">▲ ${esc(item.in)}</span>
+      ${item.usd ? `<span class="t-usd">${esc(item.usd)}</span>` : ''}
+    </div>`;
+
+  if (isNew) {
+    feed.insertBefore(el, feed.firstChild);
+  } else {
+    feed.appendChild(el);
+  }
+}
+
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(d) {
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 5)    return 'just now';
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400)return `${Math.floor(s/3600)}h ago`;
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+
+// ─────────────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('inp-moralis').value = cfg.moralisKey || '';
+  document.getElementById('inp-helius').value  = cfg.heliusKey  || '';
+  const rows = document.getElementById('wallet-rows');
+  rows.innerHTML = '';
+  (cfg.wallets || []).forEach(w => addRow(w));
+  document.getElementById('overlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+function addRow(w = {}) {
+  const chainOpts = Object.entries(CHAINS).map(([k,v]) =>
+    `<option value="${k}" ${w.chain===k?'selected':''}>${v.label}</option>`
+  ).join('');
+
+  const row = document.createElement('div');
+  row.className = 'w-row';
+  row.innerHTML = `
+    <input type="text" class="m-input w-label-in" placeholder="Label" value="${esc(w.label||'')}">
+    <input type="text" class="m-input w-addr-in"  placeholder="0x… or SOL address" value="${esc(w.address||'')}">
+    <select class="w-chain-sel">
+      ${chainOpts}
+      <option value="sol" ${w.chain==='sol'?'selected':''}>SOL</option>
+    </select>
+    <button class="btn-rm" onclick="this.closest('.w-row').remove()" title="Remove">×</button>`;
+  document.getElementById('wallet-rows').appendChild(row);
+}
+
+function saveConfig() {
+  const moralisKey = document.getElementById('inp-moralis').value.trim();
+  const heliusKey  = document.getElementById('inp-helius').value.trim();
+
+  const wallets = [];
+  document.querySelectorAll('#wallet-rows .w-row').forEach(row => {
+    const label   = row.querySelector('.w-label-in').value.trim();
+    const address = row.querySelector('.w-addr-in').value.trim();
+    const chain   = row.querySelector('.w-chain-sel').value;
+    if (address) wallets.push({ label: label || address.slice(0,6)+'…', address, chain });
+  });
+
+  cfg = { moralisKey, heliusKey, wallets };
+  try { localStorage.setItem('alphaterm_cfg', JSON.stringify(cfg)); } catch(e) {}
+
+  // Reset and restart
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  seenHashes.clear();
+  feedItems = [];
+  isFirstPoll = true;
+  document.getElementById('wallet-feed').innerHTML = `
+    <div class="feed-empty" id="feed-empty">
+      <div class="icon-empty">◈</div>
+      <p>Initialising feed…</p>
+    </div>`;
+
+  closeModal();
+  updateWalletCount();
+  boot();
+}
+
+function updateWalletCount() {
+  const n = cfg.wallets.length;
+  document.getElementById('wallet-count').textContent =
+    `— ${n} wallet${n!==1?'s':''}`;
+}
+
+function setStatus(s) {
+  const el = document.getElementById('feed-status');
+  el.textContent = s;
+  el.className = s === 'LIVE' ? 'badge badge-live' : 'badge badge-idle';
+}
+
+// Close modal on overlay click
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeModal();
+});
+</script>
+</body>
+</html>
